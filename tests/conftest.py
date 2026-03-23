@@ -81,11 +81,21 @@ def data(request) -> dict:
 
 
 @pytest.fixture
-def page(browser_context: BrowserContext) -> Page:
+def page(browser_context: BrowserContext, request) -> Page:
     config = ConfigHelper()
     default_timeout = config.get("browser").get("default_timeout", 5000)
+
+    browser_context.tracing.start(screenshots=True, snapshots=True, sources=True)
 
     page = browser_context.new_page()
     page.set_default_timeout(default_timeout)
     yield page
     page.close()
+
+    failed = request.node.rep_call.failed if hasattr(request.node, "rep_call") else False
+    if failed:
+        case_name = request.node.name.replace("[", "_").replace("]", "")
+        trace_path = request.config.artifact_path / f"{case_name}.zip"
+        browser_context.tracing.stop(path=str(trace_path))
+    else:
+        browser_context.tracing.stop()
