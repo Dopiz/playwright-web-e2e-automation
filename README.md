@@ -212,6 +212,33 @@ class TestYouTubeSearch:
 
 The root `conftest.py` hooks into pytest's reporting to automatically capture screenshots and HTML snapshots, attached to Allure reports for easy debugging.
 
+### Playwright Tracing
+
+Tracing is automatically recorded for every test. On failure, the trace file is saved to `artifacts/{test_name}.zip`. On pass, the trace is discarded.
+
+```bash
+# View a trace file
+playwright show-trace artifacts/test_search_channel_and_play_video_mrbeast_.zip
+```
+
+Trace Viewer includes: action timeline with screenshots, DOM snapshots, network requests, and console logs.
+
+### Rerun on Failure
+
+Flaky tests can be automatically retried using `pytest-rerunfailures`. Mark individual tests:
+
+```python
+@pytest.mark.flaky(reruns=2, reruns_delay=1)
+def test_example():
+    ...
+```
+
+Or apply globally via CLI:
+
+```bash
+pytest --reruns 2 --reruns-delay 1
+```
+
 
 
 ## Test Filtering
@@ -225,6 +252,7 @@ Run tests by marker. Markers are defined in `pytest.ini`.
 | `smoke` | Quick sanity tests for critical paths |
 | `regression` | Full regression test suite |
 | `slow` | Tests that take a long time to run |
+| `flaky` | Tests that may fail intermittently and need reruns |
 
 ```bash
 # Run only smoke tests
