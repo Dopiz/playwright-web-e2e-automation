@@ -85,12 +85,6 @@ uv pip install -r requirements.txt
 uv run playwright install
 ```
 
-This sets up automatic code quality checks on every `git commit`:
-- **ruff check** — Linting with auto-fix
-- **ruff format** — Code formatting
-
-To run manually on all files:
-
 ### 3. Run tests
 
 ```bash
@@ -103,6 +97,10 @@ pytest
 uv pip install pre-commit
 uv run pre-commit install
 ```
+
+This sets up automatic code quality checks on every `git commit`:
+- **ruff check** — Linting with auto-fix
+- **ruff format** — Code formatting
 
 ## Test Options
 
