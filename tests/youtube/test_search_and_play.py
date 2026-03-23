@@ -22,7 +22,6 @@ class TestYouTubeSearch:
         indirect=True,
     )
     def test_search_channel_and_play_video(self, data, youtube_home: YouTubeHomePage):
-        print(data)
         """Search for a channel on YouTube, navigate to it, play the first video, and verify playback.
 
         Steps:
