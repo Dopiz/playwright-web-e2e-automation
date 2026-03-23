@@ -1,3 +1,4 @@
+import allure
 import pytest
 from playwright.sync_api import Browser, BrowserContext, BrowserType, Page, Playwright, sync_playwright
 
@@ -55,10 +56,28 @@ def browser_context(browser: Browser, playwright_instance: Playwright, request) 
 
 @pytest.fixture(scope="session")
 def session_page(browser_context: BrowserContext) -> Page:
+    """Authenticated page that persists across all tests in the session.
+
+    Usage:
+        1. Perform login (e.g. page.goto, fill credentials, click submit)
+        2. Save state: browser_context.storage_state(path="auth/youtube.json")
+        3. For subsequent runs, load state in browser_context fixture:
+           browser.new_context(storage_state="auth/youtube.json")
+    """
     page = browser_context.new_page(ignore_https_errors=True)
-    # Login / Session / Cookie
+    # TODO: Add login flow here when tests require authentication
     yield page
     page.close()
+
+
+@pytest.fixture
+def data(request) -> dict:
+    """Indirect parametrize fixture that handles is_skip and allure description."""
+    data = request.param
+    if data.get("is_skip"):
+        pytest.skip(reason=data.get("skip_reason", "Skipped by test data"))
+    allure.dynamic.description(data["description"])
+    return data
 
 
 @pytest.fixture
