@@ -38,12 +38,15 @@ An end-to-end testing framework for YouTube, built with **Playwright** and **Pyt
 │       ├── search.py
 │       ├── search_bar.py            # Shared Component - Search Bar
 │       └── video.py
+├── test_data/
+│   └── youtube/
+│       └── search_and_play.yaml      # Test data for search & play tests
 ├── tests/
-│   ├── conftest.py                   # Browser / Context / Page fixtures
+│   ├── conftest.py                   # Browser / Context / Page / Data fixtures
 │   └── youtube/
 │       └── test_search_and_play.py   # YouTube test cases
 ├── utils/
-│   ├── helper.py                     # Config & Element YAML loader
+│   ├── helper.py                     # Config, Element & Data YAML loader
 │   └── singleton.py                  # Singleton metaclass
 ├── conftest.py                       # pytest hooks, logging, allure artifacts
 ├── pytest.ini                        # Default pytest options & logging
@@ -159,12 +162,55 @@ channel_page = search_page.go_to_channel()
 page = channel_page.go_to_video(index=0)
 ```
 
+### YAML-based Test Data Management
+
+Test data is stored in YAML files under `test_data/`, decoupled from test logic. Add test cases by editing YAML — no need to touch Python code.
+
+```yaml
+# test_data/youtube/search_and_play.yaml
+search_and_play:
+  - keyword: "mrbeast"
+    video_index: 3
+    description: "Search MrBeast channel and play video"
+    is_skip: false
+
+  - keyword: "aespa"
+    video_index: 0
+    description: "Search aespa channel and play video"
+    is_skip: true
+    skip_reason: "Channel structure differs"
+```
+
+Each test case supports:
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `description` | Yes | Displayed in test name and Allure report |
+| `is_skip` | Yes | Set `true` to skip this case |
+| `skip_reason` | No | Reason shown when skipped |
+| Other fields | - | Custom data used by the test |
+
+Tests use `indirect=True` parametrize with a shared `data` fixture that automatically handles skip logic and Allure description:
+
+```python
+test_data = DataHelper().read("youtube/search_and_play")
+
+class TestYouTubeSearch:
+    @pytest.mark.parametrize(
+        "data",
+        test_data["search_and_play"],
+        ids=lambda d: d["description"],
+        indirect=True,
+    )
+    def test_search_channel_and_play_video(self, data, youtube_home):
+        youtube_home.open()
+        search_page = youtube_home.search_bar.search(keyword=data["keyword"])
+        ...
+```
+
 ### Automatic Artifact Collection
 
 The root `conftest.py` hooks into pytest's reporting to automatically capture screenshots and HTML snapshots, attached to Allure reports for easy debugging.
-
-
-
 
 
 

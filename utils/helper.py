@@ -7,7 +7,6 @@ import yaml
 
 from utils.singleton import SingletonMeta
 
-_CONFIG_DIR = Path(__file__).parent.parent / "configuration"
 _ENV_VAR_PREFIX = "TEST_"
 
 
@@ -32,26 +31,38 @@ class BaseHelper(metaclass=SingletonMeta):
         return self._cache[cache_key]
 
 
-class ElementHelper(BaseHelper):
+class DataHelper(BaseHelper):
+    _BASE_PATH = Path(__file__).parent.parent / "test_data"
+
     def read(self, file_name: str) -> Dict[str, Any]:
-        base_path = Path(__file__).parent.parent / "elements"
-        file_path = base_path / f"{file_name}.yaml"
+        file_path = self._BASE_PATH / f"{file_name}.yaml"
+        cache_key = f"test_data_{file_name}"
+        return self._read_file(file_path, cache_key)
+
+
+class ElementHelper(BaseHelper):
+    _BASE_PATH = Path(__file__).parent.parent / "elements"
+
+    def read(self, file_name: str) -> Dict[str, Any]:
+        file_path = self._BASE_PATH / f"{file_name}.yaml"
         cache_key = f"element_{file_name}"
         return self._read_file(file_path, cache_key)
 
 
 class ConfigHelper(BaseHelper):
+    _BASE_PATH = Path(__file__).parent.parent / "configuration"
+
     def __init__(self, env: str = "default") -> None:
         super().__init__()
         if not hasattr(self, "_data"):
             self._data = self._build_config(env)
 
     def _build_config(self, env: str) -> Dict[str, Any]:
-        default = self._read_file(_CONFIG_DIR / "default.yaml", "config_default")
+        default = self._read_file(self._BASE_PATH / "default.yaml", "config_default")
         merged = deepcopy(default)
 
         if env != "default":
-            env_file = _CONFIG_DIR / f"{env}.yaml"
+            env_file = self._BASE_PATH / f"{env}.yaml"
             if env_file.exists():
                 env_config = self._read_file(env_file, f"config_{env}")
                 self._deep_merge(merged, env_config)
