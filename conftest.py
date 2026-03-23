@@ -44,6 +44,9 @@ def pytest_runtest_makereport(item, call):
     outcome = yield
     report = outcome.get_result()
 
+    # Store result on node so fixtures can check pass/fail during teardown
+    setattr(item, f"rep_{report.when}", report)
+
     if report.when == "call":
         logger.info(f"Result: {report.outcome.upper()}")
         if report.failed:
