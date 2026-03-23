@@ -1,0 +1,1 @@
+CHANNEL_LINK: "//a[contains(@class, 'channel-link') and contains(@href, '/@')]"

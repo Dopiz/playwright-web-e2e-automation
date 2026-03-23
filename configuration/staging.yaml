@@ -1,0 +1,7 @@
+browser:
+  default_timeout: 5000
+  viewport_width: 360
+  viewport_height: 640
+
+youtube:
+  entry_url: "https://www.youtube.com.tw/"

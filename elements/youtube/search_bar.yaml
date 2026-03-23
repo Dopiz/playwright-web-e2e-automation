@@ -1,0 +1,6 @@
+SEARCH_INPUT: "//input[@name='search_query']"
+SEARCH_BUTTON: "//button[@aria-label='Search']"
+SEARCH_BUTTON_NARROW: "//yt-icon-button[@id='search-button-narrow']"
+
+# TODO: Mobile web elements are purpose-built, not just scaled-down desktop elements, so the XPath selectors will be entirely different
+# SEARCH_BUTTON_NARROW: "//div[contains(@class, 'mobile-topbar-header-content')][contains(@class, 'non-search-mode')]//button"

@@ -1,0 +1,9 @@
+[project]
+name = "playwright-web-e2e-automation"
+version = "0.0.1"
+requires-python = ">=3.13"
+
+[tool.ruff]
+# Enable Pyflakes (F), pycodestyle (E), isort (I), and pytest-style (PT) rules
+lint.select = ["E", "F", "I", "PT"]
+line-length = 120

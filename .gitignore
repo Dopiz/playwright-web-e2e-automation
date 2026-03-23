@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.ruff_cache/
+
+# Virtual environment
+.venv/
+
+# pytest
+.pytest_cache/
+
+# Playwright
+artifacts/
+
+# IDE
+.vscode/
+.idea/
+.claude/
+.playwright-mcp/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Allure
+allure-results/
+allure-report/

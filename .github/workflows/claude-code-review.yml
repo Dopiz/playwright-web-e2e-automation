@@ -1,0 +1,119 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  claude-review:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Claude Code Review
+        id: claude-review
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GIT_TOKEN }}
+
+          claude_args: |
+            --model claude-sonnet-4-20250514
+            --allowedTools "Read,Grep,Glob,Bash(git:*),Bash(gh:*),mcp__github_inline_comment__create_inline_comment"
+          prompt: |
+            # PR Code Review
+
+            Review PR #${{ github.event.pull_request.number }} in ${{ github.repository }}.
+
+            ## Project Context
+
+            This is a Python E2E testing framework for YouTube, built with:
+            - **Playwright** for browser automation
+            - **Pytest** as the test framework
+            - **Allure** for test reporting
+            - **Page Object Model (POM)** design pattern
+
+            Key directories:
+            - `pages/` — Page Object classes (base.py + youtube/)
+            - `elements/` — YAML-based element selectors (youtube/)
+            - `tests/` — Test cases (youtube/)
+            - `configuration/` — Environment config YAML files
+            - `utils/` — Helpers (ConfigHelper, ElementHelper, Singleton)
+            - `conftest.py` — Root pytest hooks, logging, artifact collection
+
+            ## Review Process
+
+            1. Fetch existing PR comments and review threads:
+               `gh pr view ${{ github.event.pull_request.number }} --json comments,reviews`
+            2. For each existing github-actions[bot] comment, check if the issue is still present in current code:
+               - Read the file and line mentioned in the comment
+               - If the issue has been fixed, resolve the thread using GraphQL:
+                 `gh api graphql -f query='mutation { resolveReviewThread(input: {threadId: "THREAD_NODE_ID"}) { thread { isResolved } } }'`
+               - Get thread node IDs from: `gh api graphql -f query='{ repository(owner:"${{ github.repository_owner }}", name:"${{ github.event.repository.name }}") { pullRequest(number:${{ github.event.pull_request.number }}) { reviewThreads(first:100) { nodes { id isResolved comments(first:1) { nodes { body path line author { login } } } } } } } }'`
+            3. Get the diff using `gh pr diff ${{ github.event.pull_request.number }}` and understand all changes
+            4. Read modified files AND surrounding code for full context
+            5. Check for inconsistencies with similar code in the codebase
+            6. Post inline comments for NEW issues only (skip if similar comment exists on same file/line)
+
+            ## Review Checklist
+
+            ### Critical Issues
+            - Security vulnerabilities (exposed secrets, credentials in code)
+            - Playwright anti-patterns (hardcoded waits instead of proper waitFor/expect)
+            - Fixture scope misuse (function vs session scope)
+            - Missing cleanup in fixtures (yield without proper teardown)
+            - Resource leaks (unclosed browser, context, or page)
+            - Breaking changes to BasePage or shared components without updating dependents
+
+            ### Test Quality
+            - Missing assertions or weak assertions
+            - Hardcoded timeouts instead of Playwright's built-in waiting mechanisms
+            - Flaky locator strategies (index-based, position-based)
+            - Not following Arrange-Act-Assert pattern
+            - Missing or incorrect pytest markers
+
+            ### Page Object Model
+            - Page Object methods that contain assertions (assertions belong in tests)
+            - Missing element definitions in YAML files (hardcoded selectors in page classes)
+            - Page actions not returning the next Page Object for chaining
+            - Incorrect element_file_path in page classes
+
+            ### Code Style & Quality (Ruff)
+            - Line length exceeding limits
+            - Missing type hints for function parameters and return values
+            - Unused imports
+            - Import order violations
+            - Magic numbers without constants (should use common/constants.py)
+
+            ### Configuration
+            - Hardcoded values that should be in configuration YAML
+            - Missing config entries for new features
+            - Environment-specific values not properly handled
+
+            ## Comment Guidelines
+            - NEVER duplicate comments - check existing comments first
+            - ONLY post inline comments on specific lines using mcp__github_inline_comment__create_inline_comment
+            - Be constructive and specific
+            - Include the exact issue and suggested fix
+            - Prioritize critical issues over minor style suggestions
+
+            ## Final Review Submission
+            Before submitting a new review, hide all previous review comments from github-actions[bot] as outdated:
+            1. Get previous review node IDs: `gh api graphql -f query='{ repository(owner:"${{ github.repository_owner }}", name:"${{ github.event.repository.name }}") { pullRequest(number:${{ github.event.pull_request.number }}) { reviews(first:50, author:"github-actions[bot]") { nodes { id state } } } } }'`
+            2. For each review, minimize it: `gh api graphql -f query='mutation { minimizeComment(input: {subjectId: "REVIEW_NODE_ID", classifier: OUTDATED}) { minimizedComment { isMinimized } } }'`
+
+            Then submit using `gh pr review` (NOT `gh api`):
+            - `gh pr review ${{ github.event.pull_request.number }} --approve -b "message"` - if no critical issues
+            - `gh pr review ${{ github.event.pull_request.number }} --request-changes -b "message"` - if critical issues
+            - `gh pr review ${{ github.event.pull_request.number }} --comment -b "message"` - if only suggestions
