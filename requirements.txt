@@ -26,6 +26,7 @@ pydantic-core==2.41.5
 pyee==13.0.1
 pygments==2.19.2
 pytest==9.0.2
+pytest-rerunfailures==16.1
 python-discovery==1.2.0
 pyyaml==6.0.3
 ruff==0.15.7
