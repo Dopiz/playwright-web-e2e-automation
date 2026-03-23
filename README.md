@@ -221,6 +221,21 @@ Tracing is automatically recorded for every test. On failure, the trace file is 
 playwright show-trace artifacts/test_search_channel_and_play_video_mrbeast_.zip
 ```
 
+Trace Viewer includes:
+
+| Feature | Description |
+|---------|-------------|
+| Action timeline | Step-by-step screenshots of every Playwright action |
+| DOM snapshot | Inspect elements like DevTools at each step |
+| Network requests | All HTTP requests/responses during the test |
+| Console logs | Browser console output |
+| Source code | Maps each action back to the test code |
+
+```bash
+# View a trace file
+playwright show-trace artifacts/test_search_channel_and_play_video_mrbeast_.zip
+```
+
 Trace Viewer includes: action timeline with screenshots, DOM snapshots, network requests, and console logs.
 
 ### Rerun on Failure
