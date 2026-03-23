@@ -1,6 +1,6 @@
 # End-to-End Automation Testing Framework
 
-An end-to-end testing framework for YouTube, built with **Playwright** and **Pytest**, following the **Page Object Model (POM)** design pattern.
+A scalable end-to-end testing framework built with **Playwright** and **Pytest**, following the **Page Object Model (POM)** design pattern. Uses YouTube as a demo target.
 
 ![Playwright Demo](playwright-demo.gif)
 
@@ -18,38 +18,54 @@ An end-to-end testing framework for YouTube, built with **Playwright** and **Pyt
 
 ```
 .
+├── .github/workflows/
+│   ├── claude-code-review.yml        # AI-powered PR code review
+│   └── test-and-report.yml           # CI test & Allure report
 ├── common/
-│   └── constants.py                  # Global constants
+│   ├── constants.py                  # Global constants
+│   └── ...
 ├── configuration/
-│   └── default.yaml                  # Default config (browser, youtube, etc.)
+│   ├── default.yaml                  # Default config (browser, youtube, etc.)
+│   ├── staging.yaml                  # Staging environment overrides
+│   ├── mobile.yaml                   # Mobile device preset
+│   └── ...
 ├── elements/
-│   └── youtube/                      # YAML-based element selectors
-│       ├── channel.yaml
-│       ├── home.yaml
-│       ├── search.yaml
-│       ├── search_bar.yaml
-│       └── video.yaml
+│   ├── youtube/                      # YAML-based element selectors
+│   │   ├── channel.yaml
+│   │   ├── home.yaml
+│   │   ├── search.yaml
+│   │   ├── search_bar.yaml
+│   │   ├── video.yaml
+│   │   └── ...
+│   └── ...
 ├── pages/
 │   ├── base.py                       # BasePage + @step decorator
-│   └── youtube/                      # Page Object Model classes
-│       ├── base.py                   # YouTubeBasePage (config, search bar)
-│       ├── channel.py
-│       ├── home.py
-│       ├── search.py
-│       ├── search_bar.py            # Shared Component - Search Bar
-│       └── video.py
+│   ├── youtube/                      # Page Object Model classes
+│   │   ├── base.py                   # YouTubeBasePage (config, search bar)
+│   │   ├── channel.py
+│   │   ├── home.py
+│   │   ├── search.py
+│   │   ├── search_bar.py             # Shared Component - Search Bar
+│   │   ├── video.py
+│   │   └── ...
+│   └── ...                           # Other Page Object Model classes
 ├── test_data/
-│   └── youtube/
-│       └── search_and_play.yaml      # Test data for search & play tests
+│   └── youtube/                      # YAML-based test data
+│       ├── search_and_play.yaml
+│       └── ...
 ├── tests/
 │   ├── conftest.py                   # Browser / Context / Page / Data fixtures
 │   └── youtube/
-│       └── test_search_and_play.py   # YouTube test cases
+│       ├── test_search_and_play.py   # YouTube test cases
+│       └── ...
 ├── utils/
 │   ├── helper.py                     # Config, Element & Data YAML loader
-│   └── singleton.py                  # Singleton metaclass
+│   ├── singleton.py                  # Singleton metaclass
+│   └── ...
 ├── conftest.py                       # pytest hooks, logging, allure artifacts
+├── pyproject.toml                    # Protect configuration (e.g. ruff)
 ├── pytest.ini                        # Default pytest options & logging
+├── .pre-commit-config.yaml           # Pre-commit hooks (ruff)
 └── requirements.txt
 ```
 
@@ -69,27 +85,23 @@ uv pip install -r requirements.txt
 uv run playwright install
 ```
 
-### 3. Install pre-commit hooks
-
-```bash
-uv pip install pre-commit
-uv run pre-commit install
-```
-
 This sets up automatic code quality checks on every `git commit`:
 - **ruff check** — Linting with auto-fix
 - **ruff format** — Code formatting
 
 To run manually on all files:
 
-```bash
-uv run pre-commit run --all-files
-```
-
-### 4. Run tests
+### 3. Run tests
 
 ```bash
 pytest
+```
+
+### 4. (Optional) Install pre-commit hooks
+
+```bash
+uv pip install pre-commit
+uv run pre-commit install
 ```
 
 ## Test Options
@@ -120,6 +132,27 @@ pytest tests/youtube/test_search_and_play.py::TestYouTubeSearch::test_search_cha
 ```
 
 ## Allure Report
+
+- [Report Demo](https://dopiz.github.io/playwright-web-e2e-automation/)
+
+### Install Allure CLI
+
+**[Allure 2](https://allurereport.org/):**
+
+```bash
+# macOS
+brew install allure
+
+# npm
+npm install -g allure-commandline
+```
+
+**[Allure 3](https://github.com/allure-framework/allure3):**
+
+```bash
+# npm
+npm install -g allure-commandline@next
+```
 
 ### Generate & view report
 
@@ -306,10 +339,22 @@ pytest -k "TestYouTubeSearch"
 pytest -m smoke -k "search"
 ```
 
-### Key differences
+## CI/CD
 
-| | `-m` (marker) | `-k` (keyword) |
-|---|---|---|
-| Filters by | Decorator-based markers | Test/class/module name |
-| Needs setup | Yes (`pytest.ini` + `@pytest.mark`) | No |
-| Use case | Categorizing tests | Quick ad-hoc filtering |
+### Test & Allure Report (`test-and-report.yml`)
+
+Triggered on push to `main` or manually via `workflow_dispatch`.
+
+1. **Test** — Sets up Python + Playwright, runs tests in headless mode, uploads `allure-results`
+2. **Report** — Generates Allure report and deploys to [GitHub Pages](https://dopiz.github.io/playwright-web-e2e-automation/)
+
+### Claude Code Review (`claude-code-review.yml`)
+
+Triggered on pull request (opened, synchronize, reopened).
+
+- Uses [Claude Code Action](https://github.com/anthropics/claude-code-action) to review PR changes
+- Posts inline comments on code issues
+- Submits review (approve / request changes / comment)
+- Checks: Playwright best practices, POM patterns, Ruff code style, YAML config consistency
+
+Required secret: `ANTHROPIC_API_KEY` (`GITHUB_TOKEN` is provided automatically by GitHub Actions)
